@@ -1,3 +1,6 @@
+preprocessor-cpp/.idea
+preprocessor-cpp/cmake-build-debug
+
 # Prerequisites
 *.d
 
