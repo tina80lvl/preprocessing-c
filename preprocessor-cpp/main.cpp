@@ -46,7 +46,7 @@ std::string make_replacement(const std::string &line, const std::map<std::string
             continue;
         }
 
-        if (is_name_part(line[i])) {
+        if (is_name_part(line[i]) || (std::isdigit(line[i]) && is_name_part(line[i-1]))) {
 //            std::cerr << "name part"  << std::endl;
             var += line[i];
         } else {
@@ -94,27 +94,40 @@ void read_struct() {
 
         std::istringstream iss(line);
         std::string p1;
-        iss >> p1 >> std::ws;
+        iss >> p1;
 
-        if (p1[0] == '#') {
-            std::string identifier, replacement;
-            iss >> identifier;
-            if (identifier == "define") {
-                iss >> identifier;
-            }
+
+        std::string identifier, replacement;
+        iss >> identifier;
+        if (p1 == "#define") {
+            // start
             iss >> std::ws;
             std::getline(iss, replacement);
 //            TODO support functions
 //            TODO multiply lines
+//            TODO change order of substitution
             auto s = make_replacement(replacement, replacements);
             std::cerr << identifier << " | " << s << std::endl;
             replacements[identifier] = s;
-
+            // finish
+        } else if (p1 == "#" && identifier == "define") {
+            iss >> identifier;
+            // start
+            iss >> std::ws;
+            std::getline(iss, replacement);
+//            TODO support functions
+//            TODO multiply lines
+//            TODO change order of substitution
+            auto s = make_replacement(replacement, replacements);
+            std::cerr << identifier << " | " << s << std::endl;
+            replacements[identifier] = s;
+            // finish
         } else {
-//            std::cerr << "putting line\n";
             std::cout << make_replacement(line, replacements) << std::endl;
             put_line(line);
         }
+
+
 
     }
     fs.close();
