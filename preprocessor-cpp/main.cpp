@@ -1,8 +1,8 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
-#include <cctype>
 #include <map>
+#include "token.h"
 
 // skip_whitespace
 // parse_define
@@ -11,7 +11,7 @@
 // parse_fun
 // substitute_args
 
-void put_line(const std::string& line = "") {
+void put_line(const std::string &line = "") {
 
 }
 
@@ -46,7 +46,7 @@ std::string make_replacement(const std::string &line, const std::map<std::string
             continue;
         }
 
-        if (is_name_part(line[i]) || (std::isdigit(line[i]) && is_name_part(line[i-1]))) {
+        if (is_name_part(line[i]) || (std::isdigit(line[i]) && is_name_part(line[i - 1]))) {
 //            std::cerr << "name part"  << std::endl;
             var += line[i];
         } else {
@@ -80,6 +80,22 @@ std::string make_replacement(const std::string &line, const std::map<std::string
     return ans;
 }
 
+//std::pair<std::string, std::vector<std::string>>
+//separate_function_name(std::string &identifier, std::string &replacement) {
+//
+//}
+
+void put_replacement(const std::string &identifier, std::string &replacement, std::istringstream &iss,
+                     std::map<std::string, std::string> &replacements) {
+    std::getline(iss >> std::ws, replacement);
+//            TODO support functions
+//            TODO multiply lines
+//            TODO change order of substitution
+    auto s = make_replacement(replacement, replacements);
+    std::cerr << identifier << " | " << s << std::endl;
+    replacements[identifier] = s;
+}
+
 void read_struct() {
     std::fstream fs;
     fs.open("../hello.cpp", std::fstream::in);
@@ -100,41 +116,36 @@ void read_struct() {
         std::string identifier, replacement;
         iss >> identifier;
         if (p1 == "#define") {
-            // start
-            iss >> std::ws;
-            std::getline(iss, replacement);
-//            TODO support functions
-//            TODO multiply lines
-//            TODO change order of substitution
-            auto s = make_replacement(replacement, replacements);
-            std::cerr << identifier << " | " << s << std::endl;
-            replacements[identifier] = s;
-            // finish
+            put_replacement(identifier, replacement, iss, replacements);
         } else if (p1 == "#" && identifier == "define") {
             iss >> identifier;
-            // start
-            iss >> std::ws;
-            std::getline(iss, replacement);
-//            TODO support functions
-//            TODO multiply lines
-//            TODO change order of substitution
-            auto s = make_replacement(replacement, replacements);
-            std::cerr << identifier << " | " << s << std::endl;
-            replacements[identifier] = s;
-            // finish
+            put_replacement(identifier, replacement, iss, replacements);
         } else {
             std::cout << make_replacement(line, replacements) << std::endl;
             put_line(line);
         }
-
-
-
     }
     fs.close();
 }
 
 int main() {
-    read_struct();
+//    read_struct();
+
+
+    MasterToken* o_l = new ObjectLike{"obj string"};
+
+    std::cout << o_l->substitute({}) << std::endl;
+
+    std::vector<std::vector<size_t>> v(2, std::vector<size_t> ());
+    v[0].push_back(1);
+    v[1].push_back(5);
+    v[1].push_back(6);
+    v[1].push_back(11);
+
+    MasterToken* f_l = new FunctionLike{"0123456789abcdefg", v};
+
+    std::cout << f_l->substitute({"++","-"}) << std::endl;
+
 
 //    std::map<std::string, std::string> m;
 //    m["PN"] = "100";
