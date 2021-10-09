@@ -13,10 +13,6 @@ struct Ind {
     size_t index;
     std::string replacement;
 
-//    bool operator()(const Ind& a, const Ind& b)
-//    {
-//        return a.index < b.index;
-//    }
     bool operator <(const Ind & ind) const
     {
         return index < ind.index;
