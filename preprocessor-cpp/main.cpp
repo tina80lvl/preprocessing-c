@@ -168,7 +168,7 @@ std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str
             continue;
         }
 
-        if (is_name_part(str[i]) || (std::isdigit(str[i]) && is_name_part(str[i - 1]))) {
+        if (is_name_part(str[i]) || (std::isdigit(str[i]) && !var.empty())) {
             var += str[i];
         } else {
             if (!var.empty()) {
@@ -252,6 +252,7 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
 
+        int shift = 0;
         std::string replacement_upd;
         std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
         for (size_t i = 0; i < replacement.length(); ++i) {
@@ -262,7 +263,8 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
             const auto& j = std::find(params.begin(), params.end(), var.second);
             if (j != params.end()) {
                 auto index = std::distance(params.begin(), j);
-                idxs[index].push_back(i);
+                shift += var.second.length();
+                idxs[index].push_back(var.first - shift);
                 replacement_upd += replacement.substr(i, var.first - var.second.length() - i);
                 std::cerr << "found\t upd: " << replacement_upd << std::endl;
             } else {
@@ -272,7 +274,7 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
             i = var.first - 1;
         }
-        std::cerr << "old replacement : "  << replacement<< ", upd replacement : "  << replacement_upd << std::endl;
+        std::cerr << "old replacement : "  << replacement << ", upd replacement : "  << replacement_upd << std::endl;
 //        for (size_t i = 0; i < params.size(); ++i) {
 //            std::cerr << "param[i] = " << params[i] << "\n";
 //            idxs[i] = find_all_indexes(replacement, params[i]);
