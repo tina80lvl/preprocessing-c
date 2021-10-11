@@ -38,7 +38,7 @@ std::string trim(const std::string &s) {
 }
 
 
-std::string make_replacement(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
+std::string make_existing_replacement(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
 //    std::cout << "🧚🏼‍♀️" << line << std::endl;
     std::string var, ans;
     for (size_t i = 0; i < line.length(); ++i) {
@@ -153,7 +153,7 @@ void update_function_replacement(std::string &repl, const std::vector<std::strin
     }
 }
 
-std::pair<int, std::string> find_var(const size_t ind, const std::string &str) {
+std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str) {
     std::string var;
     size_t i = ind;
     for (; i < str.length(); ++i) {
@@ -180,7 +180,7 @@ std::pair<int, std::string> find_var(const size_t ind, const std::string &str) {
     return {i, var};
 }
 
-std::pair<int, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
+std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
     std::vector<std::string> args;
     size_t i = ind;
     if (str[i] == '(') {
@@ -213,8 +213,8 @@ void find_and_erase(const std::string& replacement, const std::vector<std::strin
 
 }
 
-void put_replacement(const std::string &identifier, std::istringstream &iss,
-                     std::map<std::string, MasterToken *> &replacements) {
+void put_new_replacement(const std::string &identifier, std::istringstream &iss,
+                         std::map<std::string, MasterToken *> &replacements) {
 
     std::string replacement;
     const auto &it = identifier.find('(');
@@ -223,7 +223,7 @@ void put_replacement(const std::string &identifier, std::istringstream &iss,
 //            TODO multiply lines
 //            TODO change order of substitution
 //            TODO remove useless variables
-        auto s = make_replacement(replacement, replacements);
+        auto s = make_existing_replacement(replacement, replacements);
 
 //        std::cerr << identifier << " | " << s << std::endl;
 
@@ -252,16 +252,36 @@ void put_replacement(const std::string &identifier, std::istringstream &iss,
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
 
+        std::string replacement_upd;
+        std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
+        for (size_t i = 0; i < replacement.length(); ++i) {
+            std::cerr << "i = " << i << ", el = " << replacement[i]<< " : ";
+            const auto& var = find_var(i, replacement);
+            std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
 
-        for (size_t i = 0; i < params.size(); ++i) {
-            std::cerr << "param[i] = " << params[i] << "\n";
-            idxs[i] = find_all_indexes(replacement, params[i]);
+            const auto& j = std::find(params.begin(), params.end(), var.second);
+            if (j != params.end()) {
+                auto index = std::distance(params.begin(), j);
+                idxs[index].push_back(i);
+                replacement_upd += replacement.substr(i, var.first - var.second.length() - i);
+                std::cerr << "found\t upd: " << replacement_upd << std::endl;
+            } else {
+                replacement_upd += replacement.substr(i, var.first - i);
+                std::cerr << "not found\t upd: " << replacement_upd << std::endl;
+            }
+
+            i = var.first - 1;
         }
-        std::cerr << "" << std::endl;
+        std::cerr << "old replacement : "  << replacement<< ", upd replacement : "  << replacement_upd << std::endl;
+//        for (size_t i = 0; i < params.size(); ++i) {
+//            std::cerr << "param[i] = " << params[i] << "\n";
+//            idxs[i] = find_all_indexes(replacement, params[i]);
+//        }
+//        std::cerr << "" << std::endl;
+//
+//        update_function_replacement(replacement, params);
 
-        update_function_replacement(replacement, params);
-
-        replacements[identifier.substr(0, it)] = new FunctionLike{replacement, idxs};
+        replacements[identifier.substr(0, it)] = new FunctionLike{make_existing_replacement(replacement_upd, replacements), idxs};
     }
 
 }
@@ -287,12 +307,12 @@ void read_struct() {
         iss >> identifier;
 //         TODO undefine
         if (p1 == "#define") {
-            put_replacement(identifier, iss, replacements);
+            put_new_replacement(identifier, iss, replacements);
         } else if (p1 == "#" && identifier == "define") {
             iss >> identifier;
-            put_replacement(identifier, iss, replacements);
+            put_new_replacement(identifier, iss, replacements);
         } else {
-            std::cout << make_replacement(line, replacements) << std::endl;
+            std::cout << make_existing_replacement(line, replacements) << std::endl;
             put_line(line);
         }
     }
@@ -300,12 +320,12 @@ void read_struct() {
 }
 
 int main() {
-    auto pa = find_var(6, "int u = FUNC(1,2);");
-    std::cerr << pa.first << " | " << pa.second << std::endl;
-
-    auto ar = find_args(12, "int u = FUNC(\"1kj\",2);");
-    std::cerr << ar.first << " | " << ar.second[0] << std::endl;
-//    read_struct();
+//    auto pa = find_var(6, "int u = FUNC(1,2);");
+//    std::cerr << pa.first << " | " << pa.second << std::endl;
+//
+//    auto ar = find_args(12, "int u = FUNC(\"1kj\",2);");
+//    std::cerr << ar.first << " | " << ar.second[0] << std::endl;
+    read_struct();
 
 //    std::string ff = "   \"fkd(pos) mf fjnfs + jfj\"   ";
 //    std::cerr << trim(ff) << "|" << std::endl;
@@ -349,7 +369,7 @@ int main() {
 //    m["PN"] = "100";
 //    m["SUM"] = "3";
 //    std::string s = "    int i, sum = 0;";
-//    std::cout << make_replacement(s, m) << std::endl;
+//    std::cout << make_existing_replacement(s, m) << std::endl;
 
     return 0;
 }
