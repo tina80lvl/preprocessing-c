@@ -7,7 +7,7 @@
 #define N_ 100
     #define PN printf("\n")
 #define SUM for(i=0; i<N; i++) sum += i
-#define FUNC(x, y) ((x)+(y))
+#define FUNC(x1, y) ((x1)+(y))
 
 int main () {
     int i, sum = 0;
