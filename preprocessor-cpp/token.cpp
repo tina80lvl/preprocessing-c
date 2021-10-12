@@ -18,15 +18,8 @@ std::string ObjectLike::substitute(const std::vector<std::string> &/*v*/) {
 }
 
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
-    std::cerr << "FunctionLike::substitute" << std::endl;
-    std::cerr << "s template: " <<  get_substitution_str() << std::endl;
-    for (auto d : v) {
-        std::cerr << d << " ";
-    }
-    std::cerr << std::endl;
 //  если хоть один из векторов индексов длина ноль - ошибка
     if (v.size() != this->indexes.size()) {
-        std::cerr << "fucking throw " << std::endl;
         throw std::invalid_argument("ERROR: Invalid argument list in FunctionLike::substitute.");
     }
 

@@ -79,8 +79,9 @@ std::string make_existing_replacement2(const std::string &line, const std::map<s
 //                    std::cerr << "in substituting var: " << var << std::endl;
 //            std::cerr << "args.size: " << args.second.size() << std::endl;
             try {
-                ans += line.substr(i, var.first - var.second.length() - i) +
-                       dict.at(var.second)->substitute(args.second);
+                std::string l = make_existing_replacement2(dict.at(var.second)->substitute(args.second), dict);
+//                std::string l = dict.at(var.second)->substitute(args.second);
+                ans += line.substr(i, var.first - var.second.length() - i) + l;
             } catch (const std::exception& e) {
                 std::cerr << e.what() << std::endl;
                 ans += line.substr(i, args.first - i);
@@ -122,13 +123,11 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
     const auto &it = identifier.find('(');
     if (it == std::string::npos) { // macros is a simple object
         std::getline(iss >> std::ws, replacement);
-//            TODO change order of substitution
-//            TODO remove useless variables
-        auto s = make_existing_replacement2(replacement, replacements);
 
 //        std::cerr << identifier << " | " << s << std::endl;
 
-        replacements[identifier] = new ObjectLike{s};
+//        replacements[identifier] = new ObjectLike{s};
+        replacements[identifier] = new ObjectLike{replacement};
     } else { // macros is a function
         std::string params_str;
         const auto &jt = identifier.find(')');
@@ -154,8 +153,6 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
-//        check_multiply_lines(iss, replacement);
-
 
         int shift = 0;
         std::string replacement_upd;
@@ -181,9 +178,7 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
         }
         std::cerr << "old replacement : " << replacement << ", upd replacement : " << replacement_upd << std::endl;
 
-
-        replacements[identifier.substr(0, it)] = new FunctionLike{
-                make_existing_replacement2(replacement_upd, replacements), idxs};
+        replacements[identifier.substr(0, it)] = new FunctionLike{replacement_upd, idxs};
     }
 
 }
