@@ -7,7 +7,7 @@
 #define N_ 100
     #define PN printf("\n")
 #define SUM for(i=0; i<N; i++) sum += i
-#define FUNC(x333, y) ((x333)+(y) - N_)
+#define FUNC(x,y) ((x)+(y) - N_)
 
 int main () {
     int i, sum = 0;

@@ -236,29 +236,31 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
             std::getline(iss, params_str, ')');
             params_str = identifier.substr(it + 1, identifier.length() - it) + params_str;
         } else {
-            params_str = identifier.substr(it + 1, jt - it);
+            params_str = identifier.substr(it + 1, jt - it - 1);
         }
-//        std::cerr << "before removing: " << params_str << std::endl;
+        std::cerr << "before removing: " << params_str << std::endl;
         params_str.erase(remove_if(params_str.begin(), params_str.end(), isspace), params_str.end());
-//        std::cerr << "after removing: " << params_str << std::endl;
+        std::cerr << "after removing: " << params_str << std::endl;
 
         std::istringstream jss(params_str);
         std::vector<std::string> params;
         std::string par;
         while (std::getline(jss, par, ',')) {
+            std::cerr << "\tpar: " << par;
             params.push_back(par);
         }
+        std::cerr << std::endl;
 
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
 
         int shift = 0;
         std::string replacement_upd;
-//        std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
+        std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
         for (size_t i = 0; i < replacement.length(); ++i) {
-//            std::cerr << "i = " << i << ", el = " << replacement[i] << " : ";
+            std::cerr << "i = " << i << ", el = " << replacement[i] << " : ";
             const auto &var = find_var(i, replacement);
-//            std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
+            std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
 
             const auto &j = std::find(params.begin(), params.end(), var.second);
             if (j != params.end()) {
@@ -266,15 +268,15 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
                 shift += var.second.length();
                 idxs[index].push_back(var.first - shift);
                 replacement_upd += replacement.substr(i, var.first - var.second.length() - i);
-//                std::cerr << "found\t upd: " << replacement_upd << std::endl;
+                std::cerr << "found\t upd: " << replacement_upd << std::endl;
             } else {
                 replacement_upd += replacement.substr(i, var.first - i);
-//                std::cerr << "not found\t upd: " << replacement_upd << std::endl;
+                std::cerr << "not found\t upd: " << replacement_upd << std::endl;
             }
 
             i = var.first - 1;
         }
-//        std::cerr << "old replacement : " << replacement << ", upd replacement : " << replacement_upd << std::endl;
+        std::cerr << "old replacement : " << replacement << ", upd replacement : " << replacement_upd << std::endl;
 
 
         replacements[identifier.substr(0, it)] = new FunctionLike{
