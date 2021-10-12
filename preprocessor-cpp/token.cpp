@@ -20,11 +20,12 @@ std::string ObjectLike::substitute(const std::vector<std::string> &/*v*/) {
 
 
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
-    std::cerr << "FunctionLike::substitute" << std::endl;
-    for (auto d : v) {
-        std::cerr << d << " ";
-    }
-    std::cerr << std::endl;
+//    std::cerr << "FunctionLike::substitute" << std::endl;
+//    std::cerr << "s template: " <<  get_substitution_str() << std::endl;
+//    for (auto d : v) {
+//        std::cerr << d << " ";
+//    }
+//    std::cerr << std::endl;
 
     if (v.size() != this->indexes.size()) {
         std::cerr << "fucking throw " << std::endl;
@@ -47,11 +48,11 @@ std::string FunctionLike::substitute(const std::vector<std::string> &v) {
 //        "   index: " << el.index << "   repl: " << el.replacement  << "   last: " << last << std::endl;
 
         auto b = str_temp.substr(last, el.index - last);
-        std::cerr << "   last: " << last << "   index: " << el.index << "   substring: " << b
-                  << std::endl;
+//        std::cerr << "   last: " << last << "   index: " << el.index << "   substring: " << b
+//                  << std::endl;
         ans += b + el.replacement;
 //        ans += get_substitution_str().substr(last, el.index + shift) + el.replacement;
-        std::cerr << "ans: " << ans << std::endl;
+//        std::cerr << "ans: " << ans << std::endl;
         last = el.index;
     }
     ans += str_temp.substr(last, str_temp.length() - last);

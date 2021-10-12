@@ -38,8 +38,95 @@ std::string trim(const std::string &s) {
 }
 
 
+std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str) {
+    std::string var;
+    size_t i = ind;
+    for (; i < str.length(); ++i) {
+        if (str[i] == '\"') {
+            ++i;
+            while (str[i++] != '\"') {}
+            continue;
+        }
+        if (str[i] == '\'') {
+            ++i;
+            while (str[i++] != '\'') {}
+            continue;
+        }
+
+        if (is_name_part(str[i]) || (std::isdigit(str[i]) && !var.empty())) {
+            var += str[i];
+        } else {
+            if (!var.empty()) {
+                return {i, var};
+            }
+        }
+    }
+
+    return {i, var};
+}
+
+std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
+    std::vector<std::string> args;
+    size_t i = ind;
+    if (str[i] == '(') {
+        std::string loc;
+        for (;;) {
+            ++i;
+//                            std::cerr << "i: " << i << std::endl;
+            if (i >= str.length()) {
+                std::cerr << "FUCK\n";
+                break;
+            }
+//                            TODO what if no closing bracket?
+            if (str[i] == ')') {
+                ++i;
+                args.push_back(loc);
+                break;
+            }
+            if (str[i] == ',') {
+                args.push_back(trim(loc));
+                loc = "";
+            } else {
+                loc += str[i];
+            }
+        }
+    }
+    return {i, args};
+}
+
+std::string make_existing_replacement2(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
+
+//    std::cerr << "🧚🏼‍♀ line: ️" << line << std::endl;
+    std::string ans;
+    int shift = 0;
+    for (size_t i = 0; i < line.length(); ++i) {
+//        std::cerr << "i = " << i << ", el = " << line[i] << " : ";
+        const auto &var = find_var(i, line);
+//        std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
+
+        if (dict.find(var.second) != dict.end()) {
+//                    std::cerr << "found var\n";
+            const auto &args = find_args(var.first, line);
+//                    std::cerr << "in substituting var: " << var << std::endl;
+//            std::cerr << "args.size: " << args.second.size() << std::endl;
+            ans += line.substr(i, var.first - var.second.length() - i) + dict.at(var.second)->substitute(args.second);
+
+            i = args.first - 1;
+//            std::cerr << "found\t upd: " << ans << std::endl;
+        } else {
+            ans += line.substr(i, var.first - i);
+            i = var.first - 1;
+//            std::cerr << "not found\t upd: " << ans << std::endl;
+        }
+
+    }
+
+
+    return ans;
+}
+
 std::string make_existing_replacement(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
-//    std::cout << "🧚🏼‍♀️" << line << std::endl;
+    //    std::cout << "🧚🏼‍♀️" << line << std::endl;
     std::string var, ans;
     for (size_t i = 0; i < line.length(); ++i) {
 //        std::cerr << "i = " << i << ", c = " << line[i] << std::endl;
@@ -126,93 +213,6 @@ std::string make_existing_replacement(const std::string &line, const std::map<st
 }
 
 
-std::vector<size_t> find_all_indexes(const std::string &str, const std::string &substr) {
-    std::cerr << "♊️ find_all_indexes str: " << str << ", substr: " << substr << std::endl;
-    std::vector<size_t> indexes;
-//    TODO if other name is a substring of another var
-    size_t pos = str.find(substr, 0);
-    while (pos != std::string::npos) {
-        std::cerr << pos << " ";
-        indexes.push_back(pos);
-        pos = str.find(substr, pos + 1);
-    }
-    std::cerr << std::endl;
-    if (indexes.empty()) {
-        throw "function parameter absent if function body";
-    }
-    return indexes;
-}
-
-void update_function_replacement(std::string &repl, const std::vector<std::string> &params) {
-    for (size_t i = 0; i < params.size(); ++i) {
-        auto pos = repl.find(params[i]);
-        while (pos != std::string::npos) {
-            repl.erase(pos, params[i].length());
-            pos = repl.find(params[i], pos);
-        }
-    }
-}
-
-std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str) {
-    std::string var;
-    size_t i = ind;
-    for (; i < str.length(); ++i) {
-        if (str[i] == '\"') {
-            ++i;
-            while (str[i++] != '\"') {}
-            continue;
-        }
-        if (str[i] == '\'') {
-            ++i;
-            while (str[i++] != '\'') {}
-            continue;
-        }
-
-        if (is_name_part(str[i]) || (std::isdigit(str[i]) && !var.empty())) {
-            var += str[i];
-        } else {
-            if (!var.empty()) {
-                return {i, var};
-            }
-        }
-    }
-
-    return {i, var};
-}
-
-std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
-    std::vector<std::string> args;
-    size_t i = ind;
-    if (str[i] == '(') {
-        std::string loc;
-        for (;;) {
-            ++i;
-//                            std::cerr << "i: " << i << std::endl;
-            if (i >= str.length()) {
-                std::cerr << "FUCK\n";
-                break;
-            }
-//                            TODO what if no closing bracket?
-            if (str[i] == ')') {
-                ++i;
-                args.push_back(loc);
-                break;
-            }
-            if (str[i] == ',') {
-                args.push_back(trim(loc));
-                loc = "";
-            } else {
-                loc += str[i];
-            }
-        }
-    }
-    return {i, args};
-}
-
-void find_and_erase(const std::string& replacement, const std::vector<std::string>& params, std::map<std::string, MasterToken *> &replacements) {
-
-}
-
 void put_new_replacement(const std::string &identifier, std::istringstream &iss,
                          std::map<std::string, MasterToken *> &replacements) {
 
@@ -223,7 +223,7 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 //            TODO multiply lines
 //            TODO change order of substitution
 //            TODO remove useless variables
-        auto s = make_existing_replacement(replacement, replacements);
+        auto s = make_existing_replacement2(replacement, replacements);
 
 //        std::cerr << identifier << " | " << s << std::endl;
 
@@ -254,36 +254,31 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
         int shift = 0;
         std::string replacement_upd;
-        std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
+//        std::cerr << "\nreplacement = " << replacement << "\nreplacement = 0123456789" << std::endl;
         for (size_t i = 0; i < replacement.length(); ++i) {
-            std::cerr << "i = " << i << ", el = " << replacement[i]<< " : ";
-            const auto& var = find_var(i, replacement);
-            std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
+//            std::cerr << "i = " << i << ", el = " << replacement[i] << " : ";
+            const auto &var = find_var(i, replacement);
+//            std::cerr << "(var = " << var.second << ", i_f = " << var.first << ")\t";
 
-            const auto& j = std::find(params.begin(), params.end(), var.second);
+            const auto &j = std::find(params.begin(), params.end(), var.second);
             if (j != params.end()) {
                 auto index = std::distance(params.begin(), j);
                 shift += var.second.length();
                 idxs[index].push_back(var.first - shift);
                 replacement_upd += replacement.substr(i, var.first - var.second.length() - i);
-                std::cerr << "found\t upd: " << replacement_upd << std::endl;
+//                std::cerr << "found\t upd: " << replacement_upd << std::endl;
             } else {
                 replacement_upd += replacement.substr(i, var.first - i);
-                std::cerr << "not found\t upd: " << replacement_upd << std::endl;
+//                std::cerr << "not found\t upd: " << replacement_upd << std::endl;
             }
 
             i = var.first - 1;
         }
-        std::cerr << "old replacement : "  << replacement << ", upd replacement : "  << replacement_upd << std::endl;
-//        for (size_t i = 0; i < params.size(); ++i) {
-//            std::cerr << "param[i] = " << params[i] << "\n";
-//            idxs[i] = find_all_indexes(replacement, params[i]);
-//        }
-//        std::cerr << "" << std::endl;
-//
-//        update_function_replacement(replacement, params);
+//        std::cerr << "old replacement : " << replacement << ", upd replacement : " << replacement_upd << std::endl;
 
-        replacements[identifier.substr(0, it)] = new FunctionLike{make_existing_replacement(replacement_upd, replacements), idxs};
+
+        replacements[identifier.substr(0, it)] = new FunctionLike{
+                make_existing_replacement2(replacement_upd, replacements), idxs};
     }
 
 }
@@ -314,7 +309,7 @@ void read_struct() {
             iss >> identifier;
             put_new_replacement(identifier, iss, replacements);
         } else {
-            std::cout << make_existing_replacement(line, replacements) << std::endl;
+            std::cout << make_existing_replacement2(line, replacements) << std::endl;
             put_line(line);
         }
     }
@@ -322,12 +317,12 @@ void read_struct() {
 }
 
 int main() {
+    read_struct();
 //    auto pa = find_var(6, "int u = FUNC(1,2);");
 //    std::cerr << pa.first << " | " << pa.second << std::endl;
 //
 //    auto ar = find_args(12, "int u = FUNC(\"1kj\",2);");
 //    std::cerr << ar.first << " | " << ar.second[0] << std::endl;
-    read_struct();
 
 //    std::string ff = "   \"fkd(pos) mf fjnfs + jfj\"   ";
 //    std::cerr << trim(ff) << "|" << std::endl;
@@ -367,11 +362,12 @@ int main() {
 //    std::cout << f_l->substitute({"++","-"}) << std::endl;
 
 
-//    std::map<std::string, std::string> m;
-//    m["PN"] = "100";
-//    m["SUM"] = "3";
-//    std::string s = "    int i, sum = 0;";
+//    std::map<std::string, MasterToken*> m;
+//    m["PN"] = new ObjectLike{"100"};
+//    m["SUM"] = new ObjectLike{"3"};
+//    std::string s = "    int i, SUM = 0;";
 //    std::cout << make_existing_replacement(s, m) << std::endl;
+//    std::cout << make_existing_replacement2(s, m) << std::endl;
 
     return 0;
 }
