@@ -1,6 +1,7 @@
 #include <iostream>
 #include <fstream>
 #include <sstream>
+#include <filesystem>
 #include <map>
 #include "token.h"
 
@@ -11,8 +12,8 @@
 // parse_fun
 // substitute_args
 
-void put_line(const std::string &line = "") {
-
+void put_line(std::fstream& fs_out, const std::string &line = "") {
+    fs_out << line << std::endl;
 }
 
 bool is_name_part(const char ch) {
@@ -80,7 +81,7 @@ std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const st
 //                            TODO what if no closing bracket?
             if (str[i] == ')') {
                 ++i;
-                args.push_back(loc);
+                args.push_back(trim(loc));
                 break;
             }
             if (str[i] == ',') {
@@ -125,92 +126,22 @@ std::string make_existing_replacement2(const std::string &line, const std::map<s
     return ans;
 }
 
-std::string make_existing_replacement(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
-    //    std::cout << "🧚🏼‍♀️" << line << std::endl;
-    std::string var, ans;
-    for (size_t i = 0; i < line.length(); ++i) {
-//        std::cerr << "i = " << i << ", c = " << line[i] << std::endl;
-        // skip string part of the code
-        if (line[i] == '\"') {
-            ans += line[i];
-            ++i;
-            while (line[i] != '\"') {
-                ans += line[i++];
-            }
-            ans += line[i];
-            continue;
-        }
-        if (line[i] == '\'') {
-            ans += line[i];
-            ++i;
-            while (line[i] != '\'') {
-                ans += line[i++];
-            }
-            ans += line[i];
-            continue;
-        }
 
-        if (is_name_part(line[i]) || (std::isdigit(line[i]) && is_name_part(line[i - 1]))) {
-//            std::cerr << "name part"  << std::endl;
-            var += line[i];
-        } else {
-//            std::cerr << "not name part"  << std::endl;
-            if (!var.empty()) {
-//                std::cerr << "var not empty"  << std::endl;
-                if (dict.find(var) != dict.end()) {
-//                    std::cerr << "💮found var\n";
-                    std::vector<std::string> args;
-                    if (line[i] == '(') {
-                        std::string loc;
-//                        std::cerr << "💮found (\n";
-                        for (;;) {
-                            ++i;
-//                            std::cerr << "i: " << i << std::endl;
-                            if (i >= line.length()) {
-                                std::cerr << "FUCK\n";
-                                break;
-                            }
-//                            TODO what if no closing bracket?
-                            if (line[i] == ')') {
-                                ++i;
-                                args.push_back(loc);
-                                break;
-                            }
-                            if (line[i] == ',') {
-                                args.push_back(trim(loc));
-                                loc = "";
-                            } else {
-                                loc += line[i];
-                            }
-                        }
-                    }
-//                    std::cerr << "in substituting var: " << var << std::endl;
-//                    std::cerr << "args.size: " << args.size() << std::endl;
-                    ans += dict.at(var)->substitute(args);
-                } else {
-                    ans += var;
-                }
-//                std::cerr << "in ANS = " << ans << std::endl;
-                var = "";
-            }
-
-            ans += line[i];
-//            std::cerr << "out ANS = " << ans << std::endl;
-        }
-
+void check_multiply_lines(std::fstream &iss, std::string& line) {
+    std::cerr << "relp: \"" << line << "\"\n";
+    while (trim(line)[line.length() - 1] == '\\') {
+        std::cerr << "WHILE\t";
+        line.pop_back();
+        std::string new_line;
+        std::getline(iss, new_line);
+        std::cerr << "new_line: \"" << new_line << "\"\n";
+//        std::string new_line2;
+//        std::getline(iss, new_line2);
+//        std::cerr << "new_line2: \"" << new_line2 << "\"\n";
+        line += trim(new_line);
+        std::cerr << "\treplacement: " << line << std::endl;
     }
-    if (!var.empty()) {
-//        std::cerr << "var not empty"  << std::endl;
-        if (dict.find(var) != dict.end()) {
-//            std::cerr << "out substituting var: " << var << std::endl;
-            ans += dict.at(var)->substitute({});
-        } else {
-            ans += var;
-        }
-//        std::cerr << "in ANS = " << ans << std::endl;
-    }
-    return ans;
-}
+};
 
 
 void put_new_replacement(const std::string &identifier, std::istringstream &iss,
@@ -221,6 +152,8 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
     if (it == std::string::npos) { // macros is a simple object
         std::getline(iss >> std::ws, replacement);
 //            TODO multiply lines
+//        check_multiply_lines(iss, replacement);
+
 //            TODO change order of substitution
 //            TODO remove useless variables
         auto s = make_existing_replacement2(replacement, replacements);
@@ -253,6 +186,8 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
+//        check_multiply_lines(iss, replacement);
+
 
         int shift = 0;
         std::string replacement_upd;
@@ -285,17 +220,16 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
 }
 
-void read_struct() {
-    std::fstream fs;
-    fs.open("../data/hello.cpp", std::fstream::in);
+void read_struct(std::fstream& fs_in, std::fstream& fs_out) {
 
     std::string line;
     std::map<std::string, MasterToken *> replacements;
-    while (std::getline(fs, line)) {
+    while (std::getline(fs_in, line)) {
         if (line.empty()) {
-            put_line();
+            put_line(fs_out);
             continue;
         }
+        check_multiply_lines(fs_in, line);
 
         std::istringstream iss(line);
         std::string p1;
@@ -311,15 +245,27 @@ void read_struct() {
             iss >> identifier;
             put_new_replacement(identifier, iss, replacements);
         } else {
-            std::cout << make_existing_replacement2(line, replacements) << std::endl;
-            put_line(line);
+//            std::cout << make_existing_replacement2(line, replacements) << std::endl;
+            put_line(fs_out, make_existing_replacement2(line, replacements));
         }
     }
-    fs.close();
 }
 
 int main() {
-    read_struct();
+    for (const auto & entry : std::filesystem::directory_iterator("../data/originals")) {
+        std::cout << entry.path() << std::endl;
+        std::fstream fs_in;
+        fs_in.open(entry.path(), std::fstream::in);
+        std::fstream fs_out;
+        std::string out_path = entry.path().generic_string().replace(8, 9, "preprocessed");
+        std::cout << out_path << std::endl;
+        fs_out.open(out_path, std::fstream::out);
+        read_struct(fs_in, fs_out);
+
+        fs_in.close();
+        fs_out.close();
+    }
+
 //    auto pa = find_var(6, "int u = FUNC(1,2);");
 //    std::cerr << pa.first << " | " << pa.second << std::endl;
 //
@@ -373,3 +319,6 @@ int main() {
 
     return 0;
 }
+
+
+// TODO trim vars in substitution
