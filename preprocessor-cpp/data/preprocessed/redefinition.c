@@ -1,9 +1,5 @@
 #include <iostream>
 
-#define A "what does the fox say"
-#define A "ratatata"
-#define F(x) x
-#define F(x) ---x---
 
 int main()
 {
@@ -12,8 +8,8 @@ int main()
     cout << "Size of float: " << sizeof(float) << " bytes" << endl;
     cout << "Size of double: " << sizeof(double) << " bytes" << endl;
 
-    cout << "define: " << A << endl;
-    cout << "define: " << F("pip") << endl;
+    cout << "define: " << "ratatata" << endl;
+    cout << "define: " << ---"pip"--- << endl;
 
     return 0;
 }
