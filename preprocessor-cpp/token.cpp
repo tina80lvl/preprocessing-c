@@ -4,7 +4,6 @@
 #include <iostream>
 #include "token.h"
 
-
 MasterToken::MasterToken(const std::string &s) : s(s) {};
 
 std::string MasterToken::get_substitution_str() { return this->s; }
@@ -18,7 +17,6 @@ std::string ObjectLike::substitute(const std::vector<std::string> &/*v*/) {
     return this->get_substitution_str();
 }
 
-
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
     std::cerr << "FunctionLike::substitute" << std::endl;
     std::cerr << "s template: " <<  get_substitution_str() << std::endl;
@@ -29,7 +27,7 @@ std::string FunctionLike::substitute(const std::vector<std::string> &v) {
 //  если хоть один из векторов индексов длина ноль - ошибка
     if (v.size() != this->indexes.size()) {
         std::cerr << "fucking throw " << std::endl;
-        throw "invalid argument list";
+        throw std::invalid_argument("ERROR: Invalid argument list in FunctionLike::substitute.");
     }
 
     std::vector<Ind> repls;

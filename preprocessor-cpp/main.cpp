@@ -4,39 +4,7 @@
 #include <filesystem>
 #include <map>
 #include "token.h"
-
-// skip_whitespace
-// parse_define
-// parse_name
-// parse_var
-// parse_fun
-// substitute_args
-
-void put_line(std::fstream& fs_out, const std::string &line = "") {
-    fs_out << line << std::endl;
-}
-
-bool is_name_part(const char ch) {
-    return isalpha(ch) || ch == '_';
-}
-
-// TODO move to utils
-
-const std::string WHITESPACE = " \n\r\t\f\v";
-
-std::string ltrim(const std::string &s) {
-    size_t start = s.find_first_not_of(WHITESPACE);
-    return (start == std::string::npos) ? "" : s.substr(start);
-}
-
-std::string rtrim(const std::string &s) {
-    size_t end = s.find_last_not_of(WHITESPACE);
-    return (end == std::string::npos) ? "" : s.substr(0, end + 1);
-}
-
-std::string trim(const std::string &s) {
-    return rtrim(ltrim(s));
-}
+#include "utils.h"
 
 
 std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str) {
@@ -110,7 +78,13 @@ std::string make_existing_replacement2(const std::string &line, const std::map<s
             const auto &args = find_args(var.first, line);
 //                    std::cerr << "in substituting var: " << var << std::endl;
 //            std::cerr << "args.size: " << args.second.size() << std::endl;
-            ans += line.substr(i, var.first - var.second.length() - i) + dict.at(var.second)->substitute(args.second);
+            try {
+                ans += line.substr(i, var.first - var.second.length() - i) +
+                       dict.at(var.second)->substitute(args.second);
+            } catch (const std::exception& e) {
+                std::cerr << e.what() << std::endl;
+                ans += line.substr(i, args.first - i);
+            }
 
             i = args.first - 1;
 //            std::cerr << "found\t upd: " << ans << std::endl;
@@ -135,9 +109,6 @@ void check_multiply_lines(std::fstream &iss, std::string& line) {
         std::string new_line;
         std::getline(iss, new_line);
         std::cerr << "new_line: \"" << new_line << "\"\n";
-//        std::string new_line2;
-//        std::getline(iss, new_line2);
-//        std::cerr << "new_line2: \"" << new_line2 << "\"\n";
         line += trim(new_line);
         std::cerr << "\treplacement: " << line << std::endl;
     }
@@ -151,9 +122,6 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
     const auto &it = identifier.find('(');
     if (it == std::string::npos) { // macros is a simple object
         std::getline(iss >> std::ws, replacement);
-//            TODO multiply lines
-//        check_multiply_lines(iss, replacement);
-
 //            TODO change order of substitution
 //            TODO remove useless variables
         auto s = make_existing_replacement2(replacement, replacements);
@@ -221,7 +189,6 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 }
 
 void read_struct(std::fstream& fs_in, std::fstream& fs_out) {
-
     std::string line;
     std::map<std::string, MasterToken *> replacements;
     while (std::getline(fs_in, line)) {
@@ -266,59 +233,5 @@ int main() {
         fs_out.close();
     }
 
-//    auto pa = find_var(6, "int u = FUNC(1,2);");
-//    std::cerr << pa.first << " | " << pa.second << std::endl;
-//
-//    auto ar = find_args(12, "int u = FUNC(\"1kj\",2);");
-//    std::cerr << ar.first << " | " << ar.second[0] << std::endl;
-
-//    std::string ff = "   \"fkd(pos) mf fjnfs + jfj\"   ";
-//    std::cerr << trim(ff) << "|" << std::endl;
-
-//    std::string rt = "fkd(pos) mf fjnfs + jfj";
-//    std::vector<std::string> gh{"pos", "fj", "m"};
-////    update_function_replacement(rt, gh);
-//    std::cerr << rt << std::endl;
-//
-//    auto fj = find_all_indexes(rt, "fj");
-//    for (auto g : fj) {
-//        std::cerr << g << " ";
-//    }
-
-//    std::string loc, s = "  dk,d fd,f ) fkf";
-//    std::istringstream iss(s);
-//    std::cerr << s << std::endl;
-//    while (std::getline(iss >> std::ws, loc, ')')) {
-//        std::cerr << loc << std::endl;
-//    }
-
-
-
-//    MasterToken* o_l = new ObjectLike{"obj string"};
-
-//
-//    std::cout << o_l->substitute({}) << std::endl;
-//
-//    std::vector<std::vector<size_t>> v(2, std::vector<size_t> ());
-//    v[0].push_back(1);
-//    v[1].push_back(5);
-//    v[1].push_back(6);
-//    v[1].push_back(11);
-//
-//    MasterToken* f_l = new FunctionLike{"0123456789abcdefg", v};
-//
-//    std::cout << f_l->substitute({"++","-"}) << std::endl;
-
-
-//    std::map<std::string, MasterToken*> m;
-//    m["PN"] = new ObjectLike{"100"};
-//    m["SUM"] = new ObjectLike{"3"};
-//    std::string s = "    int i, SUM = 0;";
-//    std::cout << make_existing_replacement(s, m) << std::endl;
-//    std::cout << make_existing_replacement2(s, m) << std::endl;
-
     return 0;
 }
-
-
-// TODO trim vars in substitution
