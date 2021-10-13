@@ -5,6 +5,7 @@
 #define F(x,y) x + y
 #define G(x,y) x + y
 #define H( x,    tttt  ,  r5)    (x) - tttt +5 *r5
+#define PARAMS(x, ...)    x + __VA_ARGS__
 
 
 int main()
@@ -15,7 +16,9 @@ int main()
     G(  3  , 4);
     H(45, 33, 12);
     K("not exist");
-
+    PARAMS(1, 2);
+    PARAMS(1, 2, 3);
+    PARAMS(1, 2, 3, 4);
 
     return 0;
 }

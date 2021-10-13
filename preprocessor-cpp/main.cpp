@@ -145,11 +145,24 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
         std::istringstream jss(params_str);
         std::vector<std::string> params;
         std::string par;
+        bool va_flag = false;
         while (std::getline(jss, par, ',')) {
             std::cerr << "\tpar: " << par;
-            params.push_back(par);
+            if (par == "...") {
+                if (va_flag) {
+                    return;
+                }
+                va_flag = true;
+                params.push_back("__VA_ARGS__");
+            } else {
+                params.push_back(par);
+            }
         }
         std::cerr << std::endl;
+
+        if (va_flag && (params[params.size() - 1] != "__VA_ARGS__")) {
+            return;
+        }
 
         std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
@@ -177,8 +190,11 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
             i = var.first - 1;
         }
         std::cerr << "old replacement : " << replacement << ", upd replacement : " << replacement_upd << std::endl;
+        for (const auto& vec : idxs) { // checking all the parameters are used
+            if (vec.empty()) return;
+        }
 
-        replacements[identifier.substr(0, it)] = new FunctionLike{replacement_upd, idxs};
+        replacements[identifier.substr(0, it)] = new FunctionLike{replacement_upd, idxs, va_flag};
     }
 
 }
@@ -207,7 +223,6 @@ void read_struct(std::fstream& fs_in, std::fstream& fs_out) {
             iss >> identifier;
             put_new_replacement(identifier, iss, replacements);
         } else {
-//            std::cout << make_existing_replacement2(line, replacements) << std::endl;
             put_line(fs_out, make_existing_replacement2(line, replacements));
         }
     }

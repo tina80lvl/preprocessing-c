@@ -38,8 +38,9 @@ public:
 class FunctionLike : public MasterToken {
 public:
 //    TODO make indexes private
+    bool various_args;
     std::vector<std::vector<size_t>> indexes;
-    FunctionLike (const std::string& s, const std::vector<std::vector<size_t>>& v);
+    FunctionLike (const std::string& s, const std::vector<std::vector<size_t>>& v, const bool va);
     std::string substitute(const std::vector<std::string>& v) override;
 };
 

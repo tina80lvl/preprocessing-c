@@ -10,23 +10,42 @@ std::string MasterToken::get_substitution_str() { return this->s; }
 
 ObjectLike::ObjectLike(const std::string &s) : MasterToken(s) {};
 
-FunctionLike::FunctionLike(const std::string &s, const std::vector<std::vector<size_t>> &v) : MasterToken(s),
-                                                                                              indexes(v) {};
+FunctionLike::FunctionLike(const std::string &s, const std::vector<std::vector<size_t>> &v, const bool va) : MasterToken(s),
+                                                                                              indexes(v), various_args(va) {};
 
 std::string ObjectLike::substitute(const std::vector<std::string> &/*v*/) {
     return this->get_substitution_str();
 }
 
+std::string concat_va(const size_t& ind, const std::vector<std::string> &v) {
+    std::string ans;
+    for (size_t i = ind; i < v.size(); ++i) {
+        ans += ',' + v[i];
+    }
+    return ans;
+}
+
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
-//  если хоть один из векторов индексов длина ноль - ошибка
-    if (v.size() != this->indexes.size()) {
+    if (v.size() < this->indexes.size()) {
+        throw std::invalid_argument("ERROR: Too little arguments in FunctionLike::substitute.");
+    }
+
+    if (v.size() != this->indexes.size() && !this->various_args) {
         throw std::invalid_argument("ERROR: Invalid argument list in FunctionLike::substitute.");
     }
 
+    std::vector<std::string>::const_iterator first_it = v.begin();
+    std::vector<std::string>::const_iterator last_it = v.begin() + this->indexes.size();
+    std::vector<std::string> nv(first_it, last_it);
+    if (v.size() > this->indexes.size()) {
+        nv[nv.size() - 1] += concat_va((size_t)std::distance(v.begin(), last_it), v);
+        std::cerr << "❌" << nv[nv.size() - 1];
+    }
+
     std::vector<Ind> repls;
-    for (size_t i = 0; i < v.size(); ++i) {
+    for (size_t i = 0; i <  this->indexes.size(); ++i) {
         for (size_t j = 0; j < this->indexes[i].size(); ++j) {
-            repls.emplace_back(Ind{this->indexes[i][j], v[i]});
+            repls.emplace_back(Ind{this->indexes[i][j], nv[i]});
         }
     }
     std::sort(repls.begin(), repls.end());
