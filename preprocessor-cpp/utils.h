@@ -6,6 +6,7 @@
 #define PREPROCESSOR_CPP_UTILS_H
 
 #include <cstring>
+#include <fstream>
 
 const std::string WHITESPACE = " \n\r\t\f\v";
 
@@ -23,7 +24,7 @@ std::string trim(const std::string &s) {
     return rtrim(ltrim(s));
 }
 
-void put_line(std::fstream& fs_out, const std::string &line = "") {
+void put_line(std::fstream &fs_out, const std::string &line = "") {
     fs_out << line << std::endl;
 }
 

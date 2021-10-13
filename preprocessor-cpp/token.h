@@ -8,13 +8,14 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <iostream>
+//#include "utils.h"
 
 struct Ind {
     size_t index;
     std::string replacement;
 
-    bool operator <(const Ind & ind) const
-    {
+    bool operator<(const Ind &ind) const {
         return index < ind.index;
     }
 };
@@ -22,16 +23,20 @@ struct Ind {
 class MasterToken {
 public:
     MasterToken(const std::string &s);
+
     std::string get_substitution_str();
-    virtual std::string substitute(const std::vector<std::string>& v) = 0;
+
+    virtual std::string substitute(const std::vector<std::string> &v) = 0;
+
 private:
     std::string s;
 };
 
 class ObjectLike : public MasterToken {
 public:
-    ObjectLike (const std::string& s);
-    std::string substitute(const std::vector<std::string>& /*v*/) override;
+    ObjectLike(const std::string &s);
+
+    std::string substitute(const std::vector<std::string> & /*v*/) override;
 };
 
 
@@ -40,10 +45,11 @@ public:
 //    TODO make indexes private
     bool various_args;
     std::vector<std::vector<size_t>> indexes;
-    FunctionLike (const std::string& s, const std::vector<std::vector<size_t>>& v, const bool va);
-    std::string substitute(const std::vector<std::string>& v) override;
-};
 
+    FunctionLike(const std::string &s, const std::vector<std::vector<size_t>> &v, const bool &va);
+
+    std::string substitute(const std::vector<std::string> &v) override;
+};
 
 
 #endif //PREPROCESSOR_CPP_TOKEN_H
