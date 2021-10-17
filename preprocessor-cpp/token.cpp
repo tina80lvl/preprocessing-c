@@ -13,8 +13,18 @@ FunctionLike::FunctionLike(const std::string &s, const std::vector<std::vector<s
         : MasterToken(s),
           indexes(v), various_args(va) {};
 
-std::string ObjectLike::substitute(const std::vector<std::string> &/*v*/) {
-    return this->get_substitution_str();
+std::string vec_to_str(const std::vector<std::string> & v) {
+    if (v.empty()) return "";
+    std::string ans = "(";
+    for (const auto& el : v) {
+        ans += el + ',';
+    }
+    ans.pop_back();
+    return ans + ')';
+}
+
+std::string ObjectLike::substitute(const std::vector<std::string> & v) {
+    return this->get_substitution_str() + vec_to_str(v);
 }
 
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
