@@ -1,6 +1,7 @@
 #include <iostream>
 #include <sstream>
 #include <map>
+#include <set>
 #include "token.h"
 #include "utils.h"
 
@@ -62,16 +63,16 @@ std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const st
 }
 
 
-std::string make_existing_replacement2(const std::string &line, const std::map<std::string, MasterToken *> &dict) {
+std::string make_existing_replacement2(const std::string &line, const std::map<std::string, MasterToken *> &dict, std::map<std::string, bool>& visited) {
     std::string ans;
     for (size_t i = 0; i < line.length(); ++i) {
         const auto &var = find_var(i, line);
-        if (dict.find(var.second) != dict.end()) {
+        if (dict.find(var.second) != dict.end() && !visited[var.second]) {
+            visited[var.second] = true;
             const auto &args = find_args(var.first, line);
             try {
                 ans += line.substr(i, var.first - var.second.length() - i) +
-                       make_existing_replacement2(dict.at(var.second)->substitute(args.second), dict);
-//                ans += line.substr(i, var.first - var.second.length() - i) + dict.at(var.second)->substitute(args.second);
+                       make_existing_replacement2(dict.at(var.second)->substitute(args.second), dict, visited);
             } catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
                 ans += line.substr(i, args.first - i);
@@ -190,33 +191,67 @@ void read_struct(std::fstream &fs_in, std::fstream &fs_out) {
             put_new_replacement(identifier, iss, replacements);
         } else {
 //            put_line(fs_out, make_existing_replacement2(make_existing_replacement2(line, replacements), replacements));
-            put_line(fs_out, make_existing_replacement2(line, replacements));
+            std::map<std::string, bool> vis;
+            put_line(fs_out, make_existing_replacement2(line, replacements, vis));
         }
     }
 }
 
 int main() {
 
-    for (const auto &entry : std::filesystem::directory_iterator("../data/originals")) {
-        std::cout << "Preprocessing file " << entry.path() << std::endl;
-        std::fstream fs_in;
-        fs_in.open(entry.path(), std::fstream::in);
+//    for (const auto &entry : std::filesystem::directory_iterator("../data/originals")) {
+//        std::cout << "Preprocessing file " << entry.path() << std::endl;
+//        std::fstream fs_in;
+//        fs_in.open(entry.path(), std::fstream::in);
+//
+//        std::fstream fs_out;
+//        std::string out_path = entry.path().generic_string().replace(8, 9, "preprocessed");
+//        fs_out.open(out_path, std::fstream::out);
+//
+//
+//        auto t1 = std::chrono::high_resolution_clock::now();
+//        read_struct(fs_in, fs_out);
+//        auto t2 = std::chrono::high_resolution_clock::now();
+//
+//        std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+//        std::cout << "Finished in " << ms_double.count() << " ms" << std::endl;
+//
+//        fs_in.close();
+//        fs_out.close();
+//    }
 
-        std::fstream fs_out;
-        std::string out_path = entry.path().generic_string().replace(8, 9, "preprocessed");
-        fs_out.open(out_path, std::fstream::out);
+//    std::string name = "alias.c";
+//    std::string name = "function.c";
+//    std::string name = "in_main.c";
+//    std::string name = "multiline.c";
+//    std::string name = "order.c";
+//    std::string name = "out_of_range.c"; //len
+//    std::string name = "recursive_function.c";
+//    std::string name = "recursive_variable.c";
+//    std::string name = "redefinition.c";
+//    std::string name = "spaces.c";
+//    std::string name = "spec_example_1.c";
+    std::string name = "spec_example_5.c";
+//    std::string name = "variable.c";
+//    std::string name = "brackets.c";
+    std::cout << "Preprocessing file " << name << std::endl;
+    std::fstream fs_in;
+    fs_in.open("../data/originals/"+name, std::fstream::in);
+
+    std::fstream fs_out;
+    std::string out_path = "../data/preprocessed/"+name;
+    fs_out.open(out_path, std::fstream::out);
 
 
-        auto t1 = std::chrono::high_resolution_clock::now();
-        read_struct(fs_in, fs_out);
-        auto t2 = std::chrono::high_resolution_clock::now();
+    auto t1 = std::chrono::high_resolution_clock::now();
+    read_struct(fs_in, fs_out);
+    auto t2 = std::chrono::high_resolution_clock::now();
 
-        std::chrono::duration<double, std::milli> ms_double = t2 - t1;
-        std::cout << "Finished in " << ms_double.count() << " ms" << std::endl;
+    std::chrono::duration<double, std::milli> ms_double = t2 - t1;
+    std::cout << "Finished in " << ms_double.count() << " ms" << std::endl;
 
-        fs_in.close();
-        fs_out.close();
-    }
+    fs_in.close();
+    fs_out.close();
 
     return 0;
 }
