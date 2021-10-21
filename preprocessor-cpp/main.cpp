@@ -36,22 +36,31 @@ std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str
 
 
 std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
+    std::cerr << "\nfind_args\n";
     std::vector<std::string> args;
     size_t i = ind;
     if (str[i] == '(') {
+        int cnt = 1;
         std::string loc;
         for (;;) {
             ++i;
+            if (str[i] == '(') ++cnt;
             if (i >= str.length()) {
                 break;
             }
 //          TODO what if no closing bracket?
             if (str[i] == ')') {
-                ++i;
-                args.push_back(trim(loc));
-                break;
+                if (cnt == 1) {
+                    ++i;
+                    std::cerr << "arg: " << trim(loc) << "\t";
+                    args.push_back(trim(loc));
+                    break;
+                } else {
+                    --cnt;
+                }
             }
             if (str[i] == ',') {
+                std::cerr << "arg: " << trim(loc) << "\t";
                 args.push_back(trim(loc));
                 loc = "";
             } else {
@@ -64,15 +73,25 @@ std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const st
 
 
 std::string make_existing_replacement2(const std::string &line, const std::map<std::string, MasterToken *> &dict, std::map<std::string, bool>& visited) {
+    std::cerr << "\nmake_existing_replacement2\n";
+    std::cerr << "line: " << line << "\n";
     std::string ans;
     for (size_t i = 0; i < line.length(); ++i) {
         const auto &var = find_var(i, line);
+        std::cerr << "var: " << var.second << "\n";
         if (dict.find(var.second) != dict.end() && !visited[var.second]) {
             visited[var.second] = true;
-            const auto &args = find_args(var.first, line);
+            auto args = find_args(var.first, line);
+            for (auto arg : args.second) {
+//                visited.erase(var.second);
+                auto y = make_existing_replacement2(arg, dict, visited);
+                std::cerr << "arg before: \'" << arg << "\'\t"<< "arg after: \'" << y  << "\'\n";
+                arg = y;
+            }
             try {
                 ans += line.substr(i, var.first - var.second.length() - i) +
                        make_existing_replacement2(dict.at(var.second)->substitute(args.second), dict, visited);
+                visited.erase(var.second);
             } catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
                 ans += line.substr(i, args.first - i);
@@ -231,9 +250,9 @@ int main() {
 //    std::string name = "redefinition.c";
 //    std::string name = "spaces.c";
 //    std::string name = "spec_example_1.c";
-    std::string name = "spec_example_5.c";
+//    std::string name = "spec_example_5.c";
 //    std::string name = "variable.c";
-//    std::string name = "brackets.c";
+    std::string name = "brackets.c";
     std::cout << "Preprocessing file " << name << std::endl;
     std::fstream fs_in;
     fs_in.open("../data/originals/"+name, std::fstream::in);

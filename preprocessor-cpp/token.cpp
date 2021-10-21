@@ -64,7 +64,7 @@ std::string FunctionLike::substitute(const std::vector<std::string> &v) {
     }
     ans += str_temp.substr(last, str_temp.length() - last);
 
-
+    std::cerr << "ans: " << ans << "\n";
     return ans;
 }
 
