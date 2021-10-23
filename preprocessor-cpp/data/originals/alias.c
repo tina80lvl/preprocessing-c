@@ -2,7 +2,8 @@
 #define g f
 #define e(x) 6 - x
 #define q(x) e(x)
-#define r(x) r(2 * (x))
+#define blob 2
+#define r(x) r(blob * (x))
 #define z z[0]
 
 
@@ -18,3 +19,7 @@ e(f(9))
 
 z
 r(u+1) + r(r(7))
+r(z)
+r(z - 1)
+
+r(u+1) + r(r(z))

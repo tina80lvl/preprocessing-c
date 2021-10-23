@@ -6,7 +6,8 @@
 #include "utils.h"
 
 
-std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str) {
+std::pair<size_t, std::string>
+find_var(const size_t ind, const std::string &str) {
     std::string var;
     size_t i = ind;
 
@@ -35,7 +36,8 @@ std::pair<size_t, std::string> find_var(const size_t ind, const std::string &str
 }
 
 
-std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const std::string &str) {
+std::pair<size_t, std::vector<std::string>>
+find_args(const size_t ind, const std::string &str) {
     std::cerr << "\nfind_args\n";
     std::vector<std::string> args;
     size_t i = ind;
@@ -71,40 +73,66 @@ std::pair<size_t, std::vector<std::string>> find_args(const size_t ind, const st
     return {i, args};
 }
 
-std::string make_existing_replacement2(const std::string &line, const std::map<std::string, MasterToken *> &dict, std::map<std::string, bool> & ignored) {
+int cnt_glob = 0;
+int lvl = 0;
+
+void prnt(const std::string &name, const std::map<std::string, bool> &m) {
+    std::cerr << name << " map elements: ";
+    for (auto el : m) {
+        std::cerr << "key: " << el.first << ", val: " << el.second << ";\t";
+    }
+    std::cerr << std::endl;
+
+}
+
+std::string make_existing_replacement2(const std::string &line,
+                                       const std::map<std::string, MasterToken *> &dict,
+                                       std::map<std::string, bool> &ignored) {
+    std::cerr << "\n\n🛑 START RCURSION LEVEL: " << ++lvl << "\n";
+//    if (cnt_glob > 10) return "";
+//    ++cnt_glob;
+
     std::cerr << "\nmake_existing_replacement2\n";
     std::cerr << "line: " << line << "\n";
     std::string ans;
-
+    prnt("ignored", ignored);
     std::map<std::string, bool> local;
     for (size_t i = 0; i < line.length(); ++i) {
         const auto &var = find_var(i, line);
         std::cerr << "var: " << var.second << "\n";
+        std::cerr << "cond 1: " << !ignored[var.second] << "\tcond 2: " << !ignored[var.second] << "\n";
         if (dict.find(var.second) != dict.end() && !ignored[var.second]) {
             std::pair<size_t, std::vector<std::string>> args;
             args = find_args(var.first, line);
 
+            local[var.second] = true;
             for (size_t j = 0; j < args.second.size(); ++j) {
                 std::map<std::string, bool> mp;
 
-                std::string repl1 = args.second[j], repl2 = make_existing_replacement2(args.second[j], dict, mp);
-                while (repl1 != repl2) {
-                    repl1 = repl2;
-                    repl2 = make_existing_replacement2(repl2, dict, mp);
-                }
-//                ignored.insert(mp.begin(), mp.end());
+                std::string repl1 = args.second[j], repl2 = make_existing_replacement2(
+                        args.second[j], dict, mp);
+                std::cerr << "repl1: " << repl1 << "\trepl2: " << repl2 << "\n";
+//                while (repl1 != repl2) {
+//                    repl1 = repl2;
+//                    repl2 = make_existing_replacement2(repl2, dict, mp);
+//                }
+                prnt("mp", mp);
+                local.insert(mp.begin(), mp.end());
+//                local[args.second[j]] = true;
                 auto y = repl2;
-                std::cerr << "arg before: \'" << args.second[j] << "\'\t"<< "arg after: \'" << y  << "\'\n";
+                std::cerr << "arg before: \'" << args.second[j] << "\'\t"
+                          << "arg after: \'" << y << "\'\n";
                 args.second[j] = y;
             }
-            local[var.second] = true;
+
 
             try {
-                ans += line.substr(i, var.first - var.second.length() - i) + dict.at(var.second)->substitute(args.second);
+                ans += line.substr(i, var.first - var.second.length() - i) +
+                       dict.at(var.second)->substitute(args.second);
 //                ans += line.substr(i, var.first - var.second.length() - i) +
 //                       make_existing_replacement2(dict.at(var.second)->substitute(args.second), dict);
 //                dict.erase(var.second);
-//                ignored[var.second] = false;
+//                local[var.second] = false;
             } catch (const std::exception &e) {
                 std::cerr << e.what() << std::endl;
                 ans += line.substr(i, args.first - i);
@@ -115,10 +143,16 @@ std::string make_existing_replacement2(const std::string &line, const std::map<s
             ans += line.substr(i, var.first - i);
             i = var.first - 1;
         }
-        std::cerr << "i: " << i << "\t loc ans: " << ans << "\n";
+//        std::cerr << "i: " << i << "\t loc ans: " << ans << "\n";
     }
-    ignored = local;
-
+    prnt("local", local);
+//    ignored = local;
+    for (auto et : local) {
+        ignored[et.first] = et.second;
+    }
+//    ignored.insert(local.begin(), local.end());
+    prnt("ignored", ignored);
+    std::cerr << "\n\n❎ END RCURSION LEVEL: " << lvl-- << "\n";
     return ans;
 }
 
@@ -147,11 +181,14 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 
         if (jt == std::string::npos) {
             std::getline(iss, params_str, ')');
-            params_str = identifier.substr(it + 1, identifier.length() - it) + params_str;
+            params_str = identifier.substr(it + 1, identifier.length() - it) +
+                         params_str;
         } else {
             params_str = identifier.substr(it + 1, jt - it - 1);
         }
-        params_str.erase(remove_if(params_str.begin(), params_str.end(), isspace), params_str.end());
+        params_str.erase(
+                remove_if(params_str.begin(), params_str.end(), isspace),
+                params_str.end());
 
         std::istringstream jss(params_str);
         std::vector<std::string> params;
@@ -173,7 +210,8 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
             return;
         }
 
-        std::vector<std::vector<size_t>> idxs(params.size(), std::vector<size_t>());
+        std::vector<std::vector<size_t>> idxs(params.size(),
+                                              std::vector<size_t>());
         std::getline(iss >> std::ws, replacement);
 
         int shift = 0;
@@ -186,7 +224,9 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
                 auto index = std::distance(params.begin(), j);
                 shift += var.second.length();
                 idxs[index].push_back(var.first - shift);
-                replacement_upd += replacement.substr(i, var.first - var.second.length() - i);
+                replacement_upd += replacement.substr(i, var.first -
+                                                         var.second.length() -
+                                                         i);
             } else {
                 replacement_upd += replacement.substr(i, var.first - i);
             }
@@ -197,7 +237,8 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 //            if (vec.empty()) return;
 //        }
 
-        replacements[identifier.substr(0, it)] = new FunctionLike{replacement_upd, idxs, va_flag};
+        replacements[identifier.substr(0, it)] = new FunctionLike{
+                replacement_upd, idxs, va_flag};
     }
 
 }
@@ -205,7 +246,7 @@ void put_new_replacement(const std::string &identifier, std::istringstream &iss,
 void read_struct(std::fstream &fs_in, std::fstream &fs_out) {
     std::string line;
     std::map<std::string, MasterToken *> replacements;
-    std::map<std::string, bool> ignored;
+
     while (std::getline(fs_in, line)) {
         if (line.empty()) {
             put_line(fs_out);
@@ -232,12 +273,15 @@ void read_struct(std::fstream &fs_in, std::fstream &fs_out) {
         } else {
 //            put_line(fs_out, make_existing_replacement2(make_existing_replacement2(line, replacements), replacements));
 //            put_line(fs_out, make_existing_replacement2(line, replacements));
-            std::string repl1 = line, repl2 = make_existing_replacement2(line, replacements, ignored);
+            std::map<std::string, bool> ignored;
+            std::string repl1 = line, repl2 = make_existing_replacement2(line,
+                                                                         replacements,
+                                                                         ignored);
             while (repl1 != repl2) {
                 repl1 = repl2;
-                repl2 = make_existing_replacement2(repl2, replacements, ignored);
+                repl2 = make_existing_replacement2(repl2, replacements,
+                                                   ignored);
             }
-            ignored = {};
             put_line(fs_out, repl2);
         }
     }
@@ -270,7 +314,7 @@ int main() {
 //    std::string name = "brackets.c";
 //    std::string name = "function.c";
 //    std::string name = "in_main.c";
-    std::string name = "multiline.c";
+//    std::string name = "multiline.c";
 //    std::string name = "order.c";
 //    std::string name = "out_of_range.c"; //len
 //    std::string name = "recursive_function.c";
@@ -278,14 +322,14 @@ int main() {
 //    std::string name = "redefinition.c";
 //    std::string name = "spaces.c";
 //    std::string name = "spec_example_1.c";
-//    std::string name = "spec_example_5.c";
+    std::string name = "spec_example_5.c";
 //    std::string name = "variable.c";
     std::cout << "Preprocessing file " << name << std::endl;
     std::fstream fs_in;
-    fs_in.open("../data/originals/"+name, std::fstream::in);
+    fs_in.open("../data/originals/" + name, std::fstream::in);
 
     std::fstream fs_out;
-    std::string out_path = "../data/preprocessed/"+name;
+    std::string out_path = "../data/preprocessed/" + name;
     fs_out.open(out_path, std::fstream::out);
 
 
