@@ -1,9 +1,10 @@
 #include <iostream>
 using namespace std;
 
-#define J(x) (x - 1 ) + \
-100500 * 5   \
--3
+
+//comment
+
+//long comment
 
 int main() {
     float n1, n2, n3;
@@ -20,7 +21,7 @@ int main() {
     if(n3 >= n1 && n3 >= n2)
         cout << "Largest number: " << n3;
 
-    int j = J(1);
+    int j = (1 - 1 ) + 100500 * 5   -3;
 
     return 0;
 }

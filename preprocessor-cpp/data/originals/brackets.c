@@ -1,5 +1,5 @@
-#define XXX(a) XXX2(a
-#define XXX2(a) XXX3(a
-#define XXX3(a) XXX4(a
-#define XXX4(a) "OK"
+#define XXX(_) XXX2(a
+#define XXX2(_) XXX3(a
+#define XXX3(_) XXX4(a
+#define XXX4(_) "OK"
 XXX(a))))
