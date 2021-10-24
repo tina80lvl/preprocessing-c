@@ -1,7 +1,7 @@
 #include <iostream>
 
-#undefine
 
+#define p() int
 #define F(x,y) x + y
 #define G(x,y) x + y
 #define D G
@@ -11,10 +11,12 @@
 
 int main()
 {
+    p();
     F(1,    2);
     F(1); // shouldn't be replaced, error thrown
     int b = F(1) + 12; // shouldn't be replaced, error thrown
     G(  3  , 4);
+    p();
     H(45, 33, 12);
     K("not exist");
     PARAMS(1, 2);

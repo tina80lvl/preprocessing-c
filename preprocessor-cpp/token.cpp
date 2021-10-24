@@ -32,6 +32,10 @@ std::string FunctionLike::substitute(const std::vector<std::string> &v) {
         throw std::invalid_argument("ERROR: Too little arguments in FunctionLike::substitute.");
     }
 
+    if ((v.empty() || (v.size() == 1 && v[0].empty())) && this->indexes.empty()) {
+        return this->get_substitution_str();
+    }
+
     if (v.size() != this->indexes.size() && !this->various_args) {
         throw std::invalid_argument("ERROR: Invalid argument list in FunctionLike::substitute.");
     }
