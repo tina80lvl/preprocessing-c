@@ -9,7 +9,6 @@
 #include <map>
 #include <vector>
 #include <iostream>
-//#include "utils.h"
 
 struct Ind {
     size_t index;
@@ -46,7 +45,8 @@ public:
     bool various_args;
     std::vector<std::vector<size_t>> indexes;
 
-    FunctionLike(const std::string &s, const std::vector<std::vector<size_t>> &v, const bool &va);
+    FunctionLike(const std::string &s,
+                 const std::vector<std::vector<size_t>> &v, const bool &va);
 
     std::string substitute(const std::vector<std::string> &v) override;
 };

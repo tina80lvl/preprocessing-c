@@ -9,7 +9,9 @@ std::string MasterToken::get_substitution_str() { return this->s; }
 
 ObjectLike::ObjectLike(const std::string &s) : MasterToken(s) {};
 
-FunctionLike::FunctionLike(const std::string &s, const std::vector<std::vector<size_t>> &v, const bool &va)
+FunctionLike::FunctionLike(const std::string &s,
+                           const std::vector<std::vector<size_t>> &v,
+                           const bool &va)
         : MasterToken(s),
           indexes(v), various_args(va) {};
 
@@ -29,23 +31,28 @@ std::string ObjectLike::substitute(const std::vector<std::string> &v) {
 
 std::string FunctionLike::substitute(const std::vector<std::string> &v) {
     if (v.size() < this->indexes.size()) {
-        throw std::invalid_argument("ERROR: Too little arguments in FunctionLike::substitute.");
+        throw std::invalid_argument(
+                "ERROR: Too little arguments in FunctionLike::substitute.");
     }
 
-    if ((v.empty() || (v.size() == 1 && v[0].empty())) && this->indexes.empty()) {
+    if ((v.empty() || (v.size() == 1 && v[0].empty())) &&
+        this->indexes.empty()) {
         return this->get_substitution_str();
     }
 
     if (v.size() != this->indexes.size() && !this->various_args) {
-        throw std::invalid_argument("ERROR: Invalid argument list in FunctionLike::substitute.");
+        throw std::invalid_argument(
+                "ERROR: Invalid argument list in FunctionLike::substitute.");
     }
 
     std::vector<std::string>::const_iterator first_it = v.begin();
-    std::vector<std::string>::const_iterator last_it = v.begin() + this->indexes.size();
+    std::vector<std::string>::const_iterator last_it =
+            v.begin() + this->indexes.size();
     std::vector<std::string> nv(first_it, last_it);
     if (v.size() > this->indexes.size()) {
         std::string add;
-        for (size_t i = (size_t) std::distance(v.begin(), last_it); i < v.size(); ++i) {
+        for (size_t i = (size_t) std::distance(v.begin(), last_it);
+             i < v.size(); ++i) {
             add += ',' + v[i];
         }
         nv[nv.size() - 1] += add;
@@ -68,7 +75,6 @@ std::string FunctionLike::substitute(const std::vector<std::string> &v) {
     }
     ans += str_temp.substr(last, str_temp.length() - last);
 
-//    std::cerr << "ans: " << ans << "\n";
     return ans;
 }
 
